@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using WeifenLuo.WinFormsUI.Docking;
 
 namespace CodeWalker
 {
@@ -40,18 +41,88 @@ namespace CodeWalker
         private MainTreeFolder SearchResults;
 
         private List<RpfFile> AllRpfs { get; set; }
-        private GameFileCache FileCache { get; set; } = new GameFileCache();
+        private GameFileCache FileCache { get; set; } = GameFileCacheFactory.Create();
         private object FileCacheSyncRoot = new object();
 
         private bool EditMode = false;
+
+        public ThemeBase Theme { get; private set; }
 
 
         public ExploreForm()
         {
             InitializeComponent();
 
+            SetTheme(Settings.Default.ExplorerWindowTheme, false);
+
             ShowMainListViewPathColumn(false);
         }
+
+        private void SetTheme(string themestr, bool changing = true)
+        {
+            //string configFile = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "DockPanel.temp.config");
+            //MainDockPanel.SaveAsXml(configFile);
+            //CloseAllContents();
+
+            foreach (ToolStripMenuItem menu in ViewThemeMenu.DropDownItems)
+            {
+                menu.Checked = false;
+            }
+
+            Theme = null;
+            var version = VisualStudioToolStripExtender.VsVersion.Vs2015;
+
+            switch (themestr)
+            {
+                default:
+                case "Windows":
+                    //Theme = new VS2005Theme();
+                    ViewThemeWindowsMenu.Checked = true;
+                    version = VisualStudioToolStripExtender.VsVersion.Unknown;
+                    if (changing)
+                    {
+                        MessageBox.Show("Please reopen RPF Explorer to change back to Windows theme.");
+                    }
+                    break;
+                case "Blue":
+                    Theme = new VS2015BlueTheme();
+                    ViewThemeBlueMenu.Checked = true;
+                    break;
+                case "Light":
+                    Theme = new VS2015LightTheme();
+                    ViewThemeLightMenu.Checked = true;
+                    break;
+                case "Dark":
+                    Theme = new VS2015DarkTheme();
+                    ViewThemeDarkMenu.Checked = true;
+                    break;
+            }
+
+            if (changing)
+            {
+                Settings.Default.ExplorerWindowTheme = themestr;
+                Settings.Default.Save();
+            }
+
+
+            //Theme.Extender.FloatWindowFactory = new ExplorerFloatWindowFactory();
+            //MainDockPanel.Theme = Theme;
+
+            if (Theme != null)
+            {
+                VSExtender.SetStyle(MainMenu, version, Theme);
+                VSExtender.SetStyle(MainToolbar, version, Theme);
+                VSExtender.SetStyle(MainStatusBar, version, Theme);
+
+                FormTheme.SetTheme(this, Theme);
+
+                MainSplitContainer.BackColor = Theme.ColorPalette.MainWindowActive.Background;
+            }
+
+
+            //if (File.Exists(configFile)) MainDockPanel.LoadFromXml(configFile, m_deserializeDockContent);
+        }
+
 
         private void Init()
         {
@@ -59,7 +130,10 @@ namespace CodeWalker
 
             InitFileTypes();
 
-            if (!EnsureGTAFolder())
+            // This is probably not necessary now that the GTA folder is checked 
+            // in the Program.cs when the game is initiated, but we will leave it 
+            // here for now to make sure 
+            if(!GTAFolder.UpdateGTAFolder(true))
             {
                 Close();
                 return;
@@ -70,7 +144,7 @@ namespace CodeWalker
             {
                 try
                 {
-                    GTA5Keys.LoadFromPath(Settings.Default.GTAFolder);
+                    GTA5Keys.LoadFromPath(GTAFolder.CurrentGTAFolder, Settings.Default.Key);
                 }
                 catch
                 {
@@ -241,45 +315,7 @@ namespace CodeWalker
             }
         }
 
-        private bool EnsureGTAFolder()
-        {
-            string fldr = Settings.Default.GTAFolder;
-            if (string.IsNullOrEmpty(fldr) || !Directory.Exists(fldr))
-            {
-                if (!ChangeGTAFolder())
-                {
-                    return false;
-                }
-                fldr = Settings.Default.GTAFolder;
-            }
-            if (!Directory.Exists(fldr))
-            {
-                MessageBox.Show("The specified folder does not exist:\n" + fldr);
-                return false;
-            }
-            if (!File.Exists(fldr + "\\gta5.exe"))
-            {
-                MessageBox.Show("GTA5.exe not found in folder:\n" + fldr);
-                return false;
-            }
-            Settings.Default.GTAFolder = fldr; //seems ok, save it for later
-            return true;
-        }
-        private bool ChangeGTAFolder()
-        {
-            SelectFolderForm f = new SelectFolderForm();
-            f.ShowDialog();
-            if (f.Result == DialogResult.OK)
-            {
-                Settings.Default.GTAFolder = f.SelectedFolder;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
+        
 
         public void UpdateStatus(string text)
         {
@@ -313,29 +349,12 @@ namespace CodeWalker
         }
 
 
-        public static string GetRootPath()
-        {
-            var path = Settings.Default.GTAFolder;
-            return path.EndsWith("\\") ? path : path + "\\";
-        }
-
-
         public void Navigate(MainTreeFolder f)
         {
             if (!Ready) return;
             if (f == CurrentFolder) return; //already there!
             if (f.IsSearchResults)
             {
-                foreach (TreeNode tn in MainTreeView.Nodes)
-                {
-                    var tnf = tn.Tag as MainTreeFolder;
-                    if ((tnf != null) && (tnf.IsSearchResults))
-                    {
-                        MainTreeView.Nodes.Remove(tn); //remove existing search result node
-                        break;
-                    }
-                }
-
                 AddMainTreeViewRoot(f); //add the current search result node
 
                 TreeNode sr = FindTreeNode(f, null);
@@ -343,6 +362,17 @@ namespace CodeWalker
                 {
                     MainTreeView.SelectedNode = sr; //navigate to the new search results node
                 }
+
+                foreach (TreeNode tn in MainTreeView.Nodes)
+                {
+                    var tnf = tn.Tag as MainTreeFolder;
+                    if ((tn != sr) && (tnf != null) && (tnf.IsSearchResults))
+                    {
+                        MainTreeView.Nodes.Remove(tn); //remove existing search result node
+                        break;
+                    }
+                }
+
                 return;
             }
             List<MainTreeFolder> hierarchy = new List<MainTreeFolder>();
@@ -596,31 +626,32 @@ namespace CodeWalker
 
             ClearMainTreeView();
 
-            var path = Settings.Default.GTAFolder;
-            var replpath = path.EndsWith("\\") ? path : path + "\\";
+            string fullPath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
 
-            string[] allfiles = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+            string[] allpaths = Directory.GetFileSystemEntries(GTAFolder.CurrentGTAFolder, "*", SearchOption.AllDirectories);
 
             Dictionary<string, MainTreeFolder> nodes = new Dictionary<string, MainTreeFolder>();
 
             MainTreeFolder root = new MainTreeFolder();
-            root.FullPath = GetRootPath();
+            root.FullPath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
             root.Path = "";
             root.Name = "GTA V";
             RootFolder = root;
 
             UpdateStatus("Scanning...");
 
-            foreach (var filepath in allfiles)
+            foreach (var path in allpaths)
             {
-                var relpath = filepath.Replace(replpath, "");
-                var filepathl = filepath.ToLowerInvariant();
+                var relpath = path.Replace(fullPath, "");
+                var filepathl = path.ToLowerInvariant();
+
+                var isFile = File.Exists(path); //could be a folder
 
                 UpdateStatus("Scanning " + relpath + "...");
 
                 MainTreeFolder parentnode = null, prevnode = null, node = null;
                 var prevnodepath = "";
-                var idx = relpath.LastIndexOf('\\');
+                var idx = isFile ? relpath.LastIndexOf('\\') : relpath.Length;
                 while (idx > 0) //create the folder tree nodes and build up the hierarchy
                 {
                     var parentpath = relpath.Substring(0, idx);
@@ -629,7 +660,7 @@ namespace CodeWalker
                     var exists = nodes.TryGetValue(parentpath, out node);
                     if (!exists)
                     {
-                        node = CreateRootDirTreeFolder(parentname, parentpath, replpath + parentpath);
+                        node = CreateRootDirTreeFolder(parentname, parentpath, fullPath + parentpath);
                         nodes[parentpath] = node;
                     }
                     if (parentnode == null)
@@ -650,34 +681,37 @@ namespace CodeWalker
                     }
                 }
 
-                if (filepathl.EndsWith(".rpf")) //add RPF nodes
+                if (isFile)
                 {
-                    RpfFile rpf = new RpfFile(filepath, relpath);
-
-                    rpf.ScanStructure(UpdateStatus, UpdateErrorLog);
-
-                    node = CreateRpfTreeFolder(rpf, relpath, filepath);
-
-                    RecurseMainTreeViewRPF(node, allRpfs);
-
-                    if (parentnode != null)
+                    if (filepathl.EndsWith(".rpf")) //add RPF nodes
                     {
-                        parentnode.AddChild(node);
+                        RpfFile rpf = new RpfFile(path, relpath);
+
+                        rpf.ScanStructure(UpdateStatus, UpdateErrorLog);
+
+                        node = CreateRpfTreeFolder(rpf, relpath, path);
+
+                        RecurseMainTreeViewRPF(node, allRpfs);
+
+                        if (parentnode != null)
+                        {
+                            parentnode.AddChild(node);
+                        }
+                        else
+                        {
+                            root.AddChild(node);
+                        }
                     }
                     else
                     {
-                        root.AddChild(node);
-                    }
-                }
-                else
-                {
-                    if (parentnode != null)
-                    {
-                        parentnode.AddFile(filepath);
-                    }
-                    else
-                    {
-                        root.AddFile(filepath);
+                        if (parentnode != null)
+                        {
+                            parentnode.AddFile(path);
+                        }
+                        else
+                        {
+                            root.AddFile(path);
+                        }
                     }
                 }
             }
@@ -703,7 +737,7 @@ namespace CodeWalker
         }
         private void RecurseMainTreeViewRPF(MainTreeFolder f, List<RpfFile> allRpfs)
         {
-            var rootpath = GetRootPath();
+            var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
 
             var fld = f.RpfFolder;
             if (fld != null)
@@ -784,6 +818,7 @@ namespace CodeWalker
                     var rn = MainTreeView.Nodes.Add(f.Path, f.Name, 0, 0); //ROOT imageIndex
                     rn.ToolTipText = f.FullPath;
                     rn.Tag = f;
+                    f.TreeNode = rn;
                 }
             }
             catch { }
@@ -968,7 +1003,55 @@ namespace CodeWalker
 
             MainListView.VirtualListSize = CurrentFiles.Count;
         }
+        private void EnsureImportedRpf(RpfFileEntry entry, RpfDirectoryEntry parentrpffldr)
+        {
+            if ((entry == null) || (parentrpffldr == null)) return;
+            var newrpf = parentrpffldr.File?.FindChildArchive(entry);
+            if (newrpf == null) return;
 
+            //an RPF file was imported. add its structure to the UI!
+            var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
+            var tnf = CreateRpfTreeFolder(newrpf, newrpf.Path, rootpath + newrpf.Path);
+            CurrentFolder.AddChildToHierarchy(tnf);
+            var pfolder = tnf.Parent;
+            if (pfolder.Children != null)
+            {
+                //make sure any existing (replaced!) one is removed first!
+                foreach (var child in pfolder.Children)
+                {
+                    if ((child != tnf) && (child.Path == tnf.Path))
+                    {
+                        pfolder.Children.Remove(child);
+                        child.TreeNode.Remove();
+                        break;
+                    }
+                }
+            }
+            RecurseMainTreeViewRPF(tnf, AllRpfs);
+            RecurseAddMainTreeViewNodes(tnf, pfolder.TreeNode);
+        }
+        private void EnsureImportedFolder(RpfDirectoryEntry entry, RpfDirectoryEntry parentrpffldr)
+        {
+            if ((entry == null) || (parentrpffldr == null)) return;
+
+            var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
+            var tnf = CreateRpfDirTreeFolder(entry, entry.Path, rootpath + entry.Path);
+            CurrentFolder.AddChildToHierarchy(tnf);
+
+            if (tnf.Parent.TreeNode != null)
+            {
+                RecurseAddMainTreeViewNodes(tnf, tnf.Parent.TreeNode);
+            }
+
+            foreach (var subdir in entry.Directories)
+            {
+                EnsureImportedFolder(subdir, entry);
+            }
+            foreach (var subfile in entry.Files)
+            {
+                EnsureImportedRpf(subfile, entry);
+            }
+        }
 
         private void RefreshMainListView()
         {
@@ -1140,22 +1223,40 @@ namespace CodeWalker
                 {
                     data = entry.File.ExtractFile(entry);//extract an RPF from another.
                 }
+                else if (!string.IsNullOrEmpty(file.FullPath) && (file.Folder.RpfFile != null))
+                {
+                    data = File.ReadAllBytes(file.FullPath); //load RPF file from filesystem
+                }
             }
-            else if (file.File != null)
+            else if (file.File != null) //load file from RPF
             {
-                //load file from RPF
                 if (file.File.File != null) //need the reference to the RPF archive
                 {
                     data = file.File.File.ExtractFile(file.File);
                 }
+                else
+                { }
             }
             else if (!string.IsNullOrEmpty(file.FullPath))
             {
-                //load file from filesystem
-                data = File.ReadAllBytes(file.FullPath);
+                data = File.ReadAllBytes(file.FullPath); //load file from filesystem
+            }
+            else
+            { }
+            return data;
+        }
+        private byte[] GetFileDataCompressResources(MainListItem file)
+        {
+            byte[] data = GetFileData(file);
+            RpfResourceFileEntry rrfe = file.File as RpfResourceFileEntry;
+            if (rrfe != null) //add resource header if this is a resource file.
+            {
+                data = ResourceBuilder.Compress(data); //not completely ideal to recompress it...
+                data = ResourceBuilder.AddResourceHeader(rrfe, data);
             }
             return data;
         }
+
 
         private bool CanViewFile(MainListItem item)
         {
@@ -1403,7 +1504,7 @@ namespace CodeWalker
         private void ViewModel(string name, string path, byte[] data, RpfFileEntry e)
         {
             var nl = e?.NameLower ?? "";
-            var fe = new FileInfo(nl).Extension;
+            var fe = Path.GetExtension(nl);
             ModelForm f = new ModelForm(this);
             f.Show();
             switch (fe)
@@ -1644,47 +1745,21 @@ namespace CodeWalker
 
 
 
-        private bool EnsureRpfValidEncryption()
+        private bool EnsureRpfValidEncryption(RpfFile file = null)
         {
-            if (CurrentFolder.RpfFolder == null) return false;
+            if ((file == null) && (CurrentFolder.RpfFolder == null)) return false;
 
-            var rpf = CurrentFolder.RpfFolder.File;
+            var rpf = file ?? CurrentFolder.RpfFolder.File;
 
-            return EnsureRpfValidEncryption(rpf);
-        }
-        private bool EnsureRpfValidEncryption(RpfFile rpf)
-        {
             if (rpf == null) return false;
 
-            bool needsupd = false;
-            var f = rpf;
-            List<RpfFile> files = new List<RpfFile>();
-            while (f != null)
+            var confirm = new Func<RpfFile, bool>((f) => 
             {
-                if (f.Encryption != RpfEncryption.OPEN)
-                {
-                    var msg = "Archive " + f.Name + " is currently set to " + f.Encryption.ToString() + " encryption.\nAre you sure you want to change this archive to OPEN encryption?\nLoading by the game will require OpenIV.asi.";
-                    if (MessageBox.Show(msg, "Change RPF encryption type", MessageBoxButtons.YesNo) != DialogResult.Yes)
-                    {
-                        return false;
-                    }
-                    needsupd = true;
-                }
-                if (needsupd)
-                {
-                    files.Add(f);
-                }
-                f = f.Parent;
-            }
+                var msg = "Archive " + f.Name + " is currently set to " + f.Encryption.ToString() + " encryption.\nAre you sure you want to change this archive to OPEN encryption?\nLoading by the game will require OpenIV.asi.";
+                return (MessageBox.Show(msg, "Change RPF encryption type", MessageBoxButtons.YesNo) == DialogResult.Yes);
+            });
 
-            //change encryption types, starting from the root rpf.
-            files.Reverse();
-            foreach (var file in files)
-            {
-                RpfFile.SetEncryptionType(file, RpfEncryption.OPEN);
-            }
-
-            return true;
+            return RpfFile.EnsureValidEncryption(rpf, confirm);
         }
 
 
@@ -1819,21 +1894,12 @@ namespace CodeWalker
 
                 if ((file.Folder == null) || (file.Folder.RpfFile != null))
                 {
-                    byte[] data = GetFileData(file);
+                    byte[] data = GetFileDataCompressResources(file);
                     if (data == null)
                     {
                         MessageBox.Show("Unable to extract file: " + file.Path);
                         return;
                     }
-
-
-                    RpfResourceFileEntry rrfe = file.File as RpfResourceFileEntry;
-                    if (rrfe != null) //add resource header if this is a resource file.
-                    {
-                        data = ResourceBuilder.Compress(data); //not completely ideal to recompress it...
-                        data = ResourceBuilder.AddResourceHeader(rrfe, data);
-                    }
-
 
                     SaveFileDialog.FileName = file.Name;
                     if (SaveFileDialog.ShowDialog() == DialogResult.OK)
@@ -1866,19 +1932,13 @@ namespace CodeWalker
                     if ((file.Folder == null) || (file.Folder.RpfFile != null))
                     {
                         var path = folderpath + file.Name;
-                        var data = GetFileData(file);
-                        if (data == null)
-                        {
-                            errors.AppendLine("Unable to extract file: " + file.Path);
-                            continue;
-                        }
                         try
                         {
-                            RpfResourceFileEntry rrfe = file.File as RpfResourceFileEntry;
-                            if (rrfe != null) //add resource header if this is a resource file.
+                            var data = GetFileDataCompressResources(file);
+                            if (data == null)
                             {
-                                data = ResourceBuilder.Compress(data); //not completely ideal to recompress it...
-                                data = ResourceBuilder.AddResourceHeader(rrfe, data);
+                                errors.AppendLine("Unable to extract file: " + file.Path);
+                                continue;
                             }
 
                             File.WriteAllBytes(path, data);
@@ -1982,19 +2042,13 @@ namespace CodeWalker
                 if ((file.Folder == null) || (file.Folder.RpfFile != null))
                 {
                     var path = folderpath + file.Name;
-                    var data = GetFileData(file);
-                    if (data == null)
-                    {
-                        errors.AppendLine("Unable to extract file: " + file.Path);
-                        continue;
-                    }
                     try
                     {
-                        RpfResourceFileEntry rrfe = file.File as RpfResourceFileEntry;
-                        if (rrfe != null) //add resource header if this is a resource file.
+                        var data = GetFileDataCompressResources(file);
+                        if (data == null)
                         {
-                            data = ResourceBuilder.Compress(data);
-                            data = ResourceBuilder.AddResourceHeader(rrfe, data);
+                            errors.AppendLine("Unable to extract file: " + file.Path);
+                            continue;
                         }
 
                         File.WriteAllBytes(path, data);
@@ -2025,8 +2079,9 @@ namespace CodeWalker
             if (!IsFilenameOk(fname)) return; //new name contains invalid char(s). don't do anything
 
 
-            string relpath = (CurrentFolder.Path ?? "") + "\\" + fname;
-            var rootpath = GetRootPath();
+            string cpath = (string.IsNullOrEmpty(CurrentFolder.Path) ? "" : CurrentFolder.Path + "\\");
+            string relpath = cpath + fname.ToLowerInvariant();
+            var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
             string fullpath = rootpath + relpath;
 
             RpfDirectoryEntry newdir = null;
@@ -2084,7 +2139,8 @@ namespace CodeWalker
             {
                 fname = fname + ".rpf";//make sure it ends with .rpf
             }
-            string relpath = (CurrentFolder.Path ?? "") + "\\" + fname.ToLowerInvariant();
+            string cpath = (string.IsNullOrEmpty(CurrentFolder.Path) ? "" : CurrentFolder.Path + "\\");
+            string relpath = cpath + fname.ToLowerInvariant();
 
 
             RpfEncryption encryption = RpfEncryption.OPEN;//TODO: select encryption mode
@@ -2103,7 +2159,7 @@ namespace CodeWalker
                 else
                 {
                     //adding a new RPF in the filesystem
-                    newrpf = RpfFile.CreateNew(Settings.Default.GTAFolder, relpath, encryption);
+                    newrpf = RpfFile.CreateNew(GTAFolder.CurrentGTAFolder, relpath, encryption);
                 }
             }
             catch (Exception ex)
@@ -2115,7 +2171,7 @@ namespace CodeWalker
 
             if (newrpf != null)
             {
-                var node = CreateRpfTreeFolder(newrpf, newrpf.Path, GetRootPath() + newrpf.Path);
+                var node = CreateRpfTreeFolder(newrpf, newrpf.Path, GTAFolder.GetCurrentGTAFolderWithTrailingSlash() + newrpf.Path);
                 RecurseMainTreeViewRPF(node, AllRpfs);
                 AddNewFolderTreeNode(node);
             }
@@ -2142,10 +2198,10 @@ namespace CodeWalker
                 return;//canceled
             }
 
-            try
+            var fpaths = OpenFileDialog.FileNames;
+            foreach (var fpath in fpaths)
             {
-                var fpaths = OpenFileDialog.FileNames;
-                foreach (var fpath in fpaths)
+                try
                 {
                     if (!File.Exists(fpath))
                     {
@@ -2195,26 +2251,13 @@ namespace CodeWalker
                     byte[] data = ResourceBuilder.Build(meta, 2); //meta is RSC V:2
 
 
-                    foreach (var exfile in parentrpffldr.Files)
-                    {
-                        if (exfile.NameLower == fnamel)
-                        {
-                            //file already exists. delete the existing one first!
-                            //this should probably be optimised to just replace the existing one...
-                            //TODO: investigate along with ReplaceSelected()
-                            RpfFile.DeleteEntry(exfile);
-                            break;
-                        }
-                    }
-
                     RpfFile.CreateFile(parentrpffldr, fname, data);
 
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Unable to import file");
-                return;
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Unable to import file");
+                }
             }
 
             CurrentFolder.ListItems = null;
@@ -2226,15 +2269,7 @@ namespace CodeWalker
             if (!EditMode) return;
             if (CurrentFolder?.IsSearchResults ?? false) return;
 
-            RpfDirectoryEntry parentrpffldr = CurrentFolder.RpfFolder;
-            if (parentrpffldr == null)
-            {
-                MessageBox.Show("No parent RPF folder selected! This shouldn't happen. Refresh the view and try again.");
-                return;
-            }
-
             if (!EnsureRpfValidEncryption()) return;
-
 
             OpenFileDialog.Filter = string.Empty;
             if (OpenFileDialog.ShowDialog(this) != DialogResult.OK)
@@ -2242,10 +2277,93 @@ namespace CodeWalker
                 return;//canceled
             }
 
-            try
+            var fpaths = OpenFileDialog.FileNames;
+
+            ImportRaw(fpaths, false);//already checked encryption before the file dialog...
+        }
+        private void ImportRaw(string[] fpaths, bool checkEncryption = true)
+        {
+            if (!EditMode) return;
+            if (CurrentFolder?.IsSearchResults ?? false) return;
+
+            RpfDirectoryEntry parentrpffldr = CurrentFolder.RpfFolder;
+            if (parentrpffldr == null)
             {
-                var fpaths = OpenFileDialog.FileNames;
-                foreach (var fpath in fpaths)
+                MessageBox.Show("No parent RPF folder selected! This shouldn't happen. Refresh the view and try again.");
+                return;
+            }
+
+            if (checkEncryption)
+            {
+                if (!EnsureRpfValidEncryption()) return;
+            }
+
+            var filelist = new List<string>();
+            var dirdict = new Dictionary<string, RpfDirectoryEntry>();
+            foreach (var fpath in fpaths)
+            {
+                try
+                {
+                    if (File.Exists(fpath))
+                    {
+                        filelist.Add(fpath);
+                    }
+                    else if (Directory.Exists(fpath)) //create imported directory structure in the RPF.
+                    {
+                        //create the first directory entry.
+                        var fdi = new DirectoryInfo(fpath);
+                        var direntry = RpfFile.CreateDirectory(parentrpffldr, fdi.Name);
+                        dirdict[fpath] = direntry;
+                        var dirpaths = Directory.GetFileSystemEntries(fpath, "*", SearchOption.AllDirectories);
+                        var newfiles = new List<string>();
+                        foreach (var dirpath in dirpaths)
+                        {
+                            if (File.Exists(dirpath))
+                            {
+                                newfiles.Add(dirpath);
+                            }
+                            else if (Directory.Exists(dirpath))
+                            {
+                                var cdi = new DirectoryInfo(dirpath);
+                                RpfDirectoryEntry pdirentry;
+                                if (!dirdict.TryGetValue(cdi.Parent.FullName, out pdirentry))
+                                {
+                                    pdirentry = direntry;//fallback, shouldn't get here
+                                }
+                                if (pdirentry != null)
+                                {
+                                    var cdirentry = RpfFile.CreateDirectory(pdirentry, cdi.Name);
+                                    dirdict[dirpath] = cdirentry;
+                                }
+                            }
+                        }
+                        foreach (var newfile in newfiles)
+                        {
+                            var nfi = new FileInfo(newfile);
+                            RpfDirectoryEntry ndirentry;
+                            if (!dirdict.TryGetValue(nfi.DirectoryName, out ndirentry))
+                            {
+                                ndirentry = direntry;//fallback, shouldn't get here
+                            }
+                            filelist.Add(newfile);
+                            dirdict[newfile] = ndirentry;
+                        }
+
+                        EnsureImportedFolder(direntry, parentrpffldr);
+                    }
+                    else
+                    { } //nothing to see here!
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Unable to import folder");
+                }
+            }
+
+
+            foreach (var fpath in filelist)
+            {
+                try
                 {
                     if (!File.Exists(fpath))
                     {
@@ -2254,7 +2372,6 @@ namespace CodeWalker
 
                     var fi = new FileInfo(fpath);
                     var fname = fi.Name;
-                    var fnamel = fname.ToLowerInvariant();
 
                     if (fi.Length > 0x3FFFFFFF)
                     {
@@ -2262,54 +2379,27 @@ namespace CodeWalker
                         continue;
                     }
 
+                    Cursor = Cursors.WaitCursor;
+
                     byte[] data = File.ReadAllBytes(fpath);
 
 
-                    foreach (var exfile in parentrpffldr.Files)
+                    var rpffldr = parentrpffldr;
+                    if (dirdict.ContainsKey(fpath))
                     {
-                        if (exfile.NameLower == fnamel)
-                        {
-                            //file already exists. delete the existing one first!
-                            //this should probably be optimised to just replace the existing one...
-                            //TODO: investigate along with ReplaceSelected()
-                            RpfFile.DeleteEntry(exfile);
-                            break;
-                        }
+                        rpffldr = dirdict[fpath];
                     }
 
-                    var entry = RpfFile.CreateFile(parentrpffldr, fname, data);
+                    var entry = RpfFile.CreateFile(rpffldr, fname, data);
 
+                    EnsureImportedRpf(entry, rpffldr); //make sure structure is created if an RPF was imported
 
-                    var newrpf = parentrpffldr.File?.FindChildArchive(entry);
-                    if (newrpf != null)
-                    {
-                        //an RPF file was imported. add its structure to the UI!
-                        var rootpath = GetRootPath();
-                        var tnf = CreateRpfTreeFolder(newrpf, newrpf.Path, rootpath + newrpf.Path);
-                        if (CurrentFolder.Children != null)
-                        {
-                            //make sure any existing (replaced!) one is removed first!
-                            foreach (var child in CurrentFolder.Children)
-                            {
-                                if (child.Path == tnf.Path)
-                                {
-                                    CurrentFolder.Children.Remove(child);
-                                    child.TreeNode.Remove();
-                                    break;
-                                }
-                            }
-                        }
-                        CurrentFolder.AddChildToHierarchy(tnf);
-                        RecurseMainTreeViewRPF(tnf, AllRpfs);
-                        RecurseAddMainTreeViewNodes(tnf, CurrentFolder.TreeNode);
-                    }
-
+                    Cursor = Cursors.Default;
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Unable to import file");
-                return;
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Unable to import file");
+                }
             }
 
             CurrentFolder.ListItems = null;
@@ -2324,7 +2414,7 @@ namespace CodeWalker
         {
             if (MainListView.SelectedIndices.Count == 0)
             {
-                Clipboard.SetText(CurrentFolder?.FullPath ?? GetRootPath());
+                Clipboard.SetText(CurrentFolder?.FullPath ?? GTAFolder.GetCurrentGTAFolderWithTrailingSlash());
             }
             else if (MainListView.SelectedIndices.Count == 1)
             {
@@ -2499,6 +2589,14 @@ namespace CodeWalker
                         return;
                     }
                 }
+                else if ((item.Folder?.GetItemCount() ?? 0) > 0)
+                {
+                    //confirm deletion of non-empty folders, just to be friendly.
+                    if (MessageBox.Show("Are you sure you want to delete this folder and all its contents?\n" + item.Path, "Confirm delete folder", MessageBoxButtons.YesNo) != DialogResult.Yes)
+                    {
+                        return;
+                    }
+                }
 
                 var parent = item.Parent;
                 if (parent.RpfFolder != null)
@@ -2660,9 +2758,13 @@ namespace CodeWalker
 
             MainListView.View = v;
 
-            foreach (ToolStripMenuItem menu in ViewMenu.DropDownItems)
+            foreach (var item in ViewMenu.DropDownItems)
             {
-                menu.Checked = false;
+                var menu = item as ToolStripMenuItem;
+                if (menu != null)
+                {
+                    menu.Checked = false;
+                }
             }
 
             switch (v)
@@ -2684,9 +2786,52 @@ namespace CodeWalker
         }
 
 
+
+
+
+        private string GetDropFolder()
+        {
+            return Path.Combine(Path.GetTempPath(), "CodeWalkerDrop");
+        }
+        private string CreateDropFolder()
+        {
+            string drop = GetDropFolder();
+            if (!Directory.Exists(drop))
+            {
+                Directory.CreateDirectory(drop);
+            }
+            string dir = Path.Combine(drop, Guid.NewGuid().ToString());
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            return dir;
+        }
+        private void CleanupDropFolder()
+        {
+            string drop = GetDropFolder();
+            if (Directory.Exists(drop))
+            {
+                try
+                {
+                    Directory.Delete(drop, true); //so broken :[
+                }
+                catch { } //not much we can do here...
+            }
+        }
+
+
+
+
+
         private void ExploreForm_Load(object sender, EventArgs e)
         {
             Init();
+        }
+
+        private void ExploreForm_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            CleanupDropFolder();
         }
 
         private void MainTreeView_AfterSelect(object sender, TreeViewEventArgs e)
@@ -2865,6 +3010,128 @@ namespace CodeWalker
             }
         }
 
+        private void MainListView_ItemDrag(object sender, ItemDragEventArgs e)
+        {
+            if (MainListView.SelectedIndices.Count <= 0) return;
+
+            var dir = CreateDropFolder();
+            var filenames = new List<string>();
+            var errors = new List<string>();
+
+            Cursor = Cursors.WaitCursor;
+
+            var writeFile = new Action<MainListItem, string, bool>((file, outdir, addfilename) => 
+            {
+                if (file.FileSize > 0x6400000) //100MB
+                {
+                    errors.Add(file.Name + " is greater than 100MB, drag-drop for large files is disabled.");
+                    return;
+                }
+                try
+                {
+                    var data = GetFileDataCompressResources(file);
+                    var filename = Path.Combine(outdir, file.Name);
+                    File.WriteAllBytes(filename, data);
+                    if (addfilename)
+                    {
+                        filenames.Add(filename);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors.Add(ex.ToString());
+                }
+            });
+
+            for (int i = 0; i < MainListView.SelectedIndices.Count; i++)
+            {
+                var idx = MainListView.SelectedIndices[i];
+                if ((idx < 0) || (idx >= CurrentFiles.Count)) continue;
+                var file = CurrentFiles[idx];
+                if ((file.Folder == null) || (file.Folder.RpfFile != null))
+                {
+                    //item is a file (or RPF archive).
+                    writeFile(file, dir, true);
+                }
+                else
+                {
+                    //item is a folder.
+                    var parentpath = file.Parent.Path;
+                    var folderstack = new Stack<MainTreeFolder>();
+                    folderstack.Push(file.Folder);
+                    while (folderstack.Count > 0)
+                    {
+                        var folder = folderstack.Pop();
+                        var folderitems = folder.GetListItems();
+                        var relpath = folder.Path.Replace(parentpath, "");
+                        var abspath = dir + relpath;
+                        if (!Directory.Exists(abspath))
+                        {
+                            Directory.CreateDirectory(abspath); //create the temp directory...
+                        }
+                        foreach (var item in folderitems)
+                        {
+                            if ((item.Folder == null) || (item.Folder.RpfFile != null))
+                            {
+                                writeFile(item, abspath, false);
+                            }
+                            else
+                            {
+                                folderstack.Push(item.Folder);
+                            }
+                        }
+                    }
+                    filenames.Add(dir + "\\" + file.Name);
+                }
+            }
+
+            Cursor = Cursors.Default;
+
+            if (filenames.Count > 0)
+            {
+                DataObject dataobj = new DataObject(DataFormats.FileDrop, filenames.ToArray());
+                DoDragDrop(dataobj, DragDropEffects.Copy);
+            }
+            else
+            {
+                if (errors.Count > 0)
+                {
+                    MessageBox.Show("Errors encountered while dragging:\n" + string.Join("\n", errors.ToArray()));
+                }
+            }
+
+        }
+
+        private void MainListView_DragEnter(object sender, DragEventArgs e)
+        {
+            if (!EditMode) return;
+            if (CurrentFolder?.IsSearchResults ?? false) return;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if ((files != null) && (files.Length > 0))
+                {
+                    if (!files[0].StartsWith(GetDropFolder(), StringComparison.InvariantCultureIgnoreCase)) //don't dry to drop on ourselves...
+                    {
+                        e.Effect = DragDropEffects.Copy;
+                    }
+                }
+            }
+        }
+
+        private void MainListView_DragDrop(object sender, DragEventArgs e)
+        {
+            if (!EditMode) return;
+            if (CurrentFolder?.IsSearchResults ?? false) return;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if ((files == null) || (files.Length <= 0)) return;
+                if (files[0].StartsWith(GetDropFolder(), StringComparison.InvariantCultureIgnoreCase)) return; //don't dry to drop on ourselves...
+                ImportRaw(files);
+            }
+        }
+
         private void BackButton_ButtonClick(object sender, EventArgs e)
         {
             GoBack();
@@ -2985,7 +3252,7 @@ namespace CodeWalker
         private void TreeContextWinExplorerMenu_Click(object sender, EventArgs e)
         {
             var folder = MainTreeView.SelectedNode?.Tag as MainTreeFolder;
-            var path = folder?.FullPath ?? GetRootPath();
+            var path = folder?.FullPath ?? GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
             ShowInExplorer(path);
         }
 
@@ -3212,6 +3479,26 @@ namespace CodeWalker
             SetView(System.Windows.Forms.View.Details);
         }
 
+        private void ViewThemeWindowsMenu_Click(object sender, EventArgs e)
+        {
+            SetTheme("Windows");
+        }
+
+        private void ViewThemeBlueMenu_Click(object sender, EventArgs e)
+        {
+            SetTheme("Blue");
+        }
+
+        private void ViewThemeLightMenu_Click(object sender, EventArgs e)
+        {
+            SetTheme("Light");
+        }
+
+        private void ViewThemeDarkMenu_Click(object sender, EventArgs e)
+        {
+            SetTheme("Dark");
+        }
+
         private void ToolsOptionsMenu_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Options TODO!");
@@ -3270,7 +3557,7 @@ namespace CodeWalker
                 if (parent.Children == null) break;
                 foreach (var tc in parent.Children)
                 {
-                    if (tc.Name == pname)
+                    if (tc.Name.Equals(pname, StringComparison.InvariantCultureIgnoreCase))
                     {
                         parent = tc;
                         break;
@@ -3288,7 +3575,7 @@ namespace CodeWalker
             if (ListItems == null)
             {
                 ListItems = new List<MainListItem>();
-                var rootpath = ExploreForm.GetRootPath();
+                var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
 
                 if (Children != null)
                 {
@@ -3350,7 +3637,7 @@ namespace CodeWalker
                 resultcount++;
             }
 
-            var rootpath = ExploreForm.GetRootPath();
+            var rootpath = GTAFolder.GetCurrentGTAFolderWithTrailingSlash();
 
             if (Files != null)
             {

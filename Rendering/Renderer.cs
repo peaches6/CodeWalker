@@ -27,7 +27,7 @@ namespace CodeWalker.Rendering
 
         public ShaderManager shaders;
 
-        public Camera camera = new Camera();
+        public Camera camera;
 
         private double currentRealTime = 0;
         private float currentElapsedTime = 0;
@@ -154,9 +154,12 @@ namespace CodeWalker.Rendering
             gameFileCache = cache;
             if (gameFileCache == null)
             {
-                gameFileCache = new GameFileCache();
+                gameFileCache = GameFileCacheFactory.Create();
             }
             renderableCache = new RenderableCache();
+
+            var s = Settings.Default;
+            camera = new Camera(s.CameraSmoothing, s.CameraSensitivity, s.CameraFieldOfView);
         }
 
 
@@ -2025,7 +2028,7 @@ namespace CodeWalker.Rendering
                         var pch = pl1.Children.data_items[i];
                         if ((pch.Drawable1 != null) && (pch.Drawable1.AllModels.Length != 0))
                         {
-                            //RenderDrawable(pch.Drawable1, arch, ent, -camera.Position, hash);
+                            RenderDrawable(pch.Drawable1, arch, ent, txdhash);
                         }
                     }
                 }
@@ -2253,10 +2256,8 @@ namespace CodeWalker.Rendering
 
 
 
-        public void RenderCar(Vector3 pos, Quaternion ori, MetaHash modelHash, MetaHash modelSetHash)
+        public void RenderCar(Vector3 pos, Quaternion ori, MetaHash modelHash, MetaHash modelSetHash, bool valign = false)
         {
-            SelectedCarGenEntity.SetPosition(pos);
-            SelectedCarGenEntity.SetOrientation(ori);
 
             uint carhash = modelHash;
             if ((carhash == 0) && (modelSetHash != 0))
@@ -2277,6 +2278,15 @@ namespace CodeWalker.Rendering
             YftFile caryft = gameFileCache.GetYft(carhash);
             if ((caryft != null) && (caryft.Loaded) && (caryft.Fragment != null))
             {
+                if (valign)
+                {
+                    float minz = caryft.Fragment.PhysicsLODGroup?.PhysicsLOD1?.Bound?.BoundingBoxMin.Z ?? 0.0f;
+                    pos.Z -= minz;
+                }
+
+                SelectedCarGenEntity.SetPosition(pos);
+                SelectedCarGenEntity.SetOrientation(ori);
+
                 RenderFragment(null, SelectedCarGenEntity, caryft.Fragment, carhash);
             }
         }
@@ -2416,6 +2426,8 @@ namespace CodeWalker.Rendering
             }
 
 
+            var yptTexDict = (drawable.Owner as YptFile)?.PtfxList?.TextureDictionary;
+
             bool alltexsloaded = true;
             int missingtexcount = 0;
             for (int mi = 0; mi < rndbl.HDModels.Length; mi++)
@@ -2440,7 +2452,12 @@ namespace CodeWalker.Rendering
                             if ((ttex == null) && (tex != null))
                             {
                                 //TextureRef means this RenderableTexture needs to be loaded from texture dict...
-                                if (texDict != 0)
+                                if (yptTexDict != null) //for ypt files, first try the embedded tex dict..
+                                {
+                                    var dtex = yptTexDict.Lookup(tex.NameHash);
+                                    rdtex = renderableCache.GetRenderableTexture(dtex);
+                                }
+                                else if (texDict != 0)
                                 {
                                     YtdFile ytd = gameFileCache.GetYtd(texDict);
                                     if ((ytd != null) && (ytd.Loaded) && (ytd.TextureDict != null))

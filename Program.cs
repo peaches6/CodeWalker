@@ -17,6 +17,7 @@ namespace CodeWalker
 
             bool menumode = false;
             bool explorermode = false;
+            bool projectmode = false;
             if ((args != null) && (args.Length > 0))
             {
                 foreach (string arg in args)
@@ -30,12 +31,23 @@ namespace CodeWalker
                     {
                         explorermode = true;
                     }
+                    if (argl == "project")
+                    {
+                        projectmode = true;
+                    }
                 }
             }
             
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+
+            // Always check the GTA folder first thing
+            if (!GTAFolder.UpdateGTAFolder(Properties.Settings.Default.RememberGTAFolder))
+            {
+                MessageBox.Show("Could not load CodeWalker because no valid GTA 5 folder was selected. CodeWalker will now exit.", "GTA 5 Folder Not Found", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                return;
+            }
 #if !DEBUG
             try
             {
@@ -47,6 +59,10 @@ namespace CodeWalker
                 else if (explorermode)
                 {
                     Application.Run(new ExploreForm());
+                }
+                else if (projectmode)
+                {
+                    Application.Run(new Project.ProjectForm());
                 }
                 else
                 {

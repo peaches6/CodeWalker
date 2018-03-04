@@ -58,6 +58,12 @@
             this.ViewSmallIconsMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ViewListMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ViewDetailsMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator11 = new System.Windows.Forms.ToolStripSeparator();
+            this.ViewThemeMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ViewThemeWindowsMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ViewThemeBlueMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ViewThemeLightMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ViewThemeDarkMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolsMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolsBinSearchMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolsRpfBrowserMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -80,7 +86,7 @@
             this.SearchButton = new System.Windows.Forms.ToolStripSplitButton();
             this.SearchGlobalButton = new System.Windows.Forms.ToolStripMenuItem();
             this.SearchFilterButton = new System.Windows.Forms.ToolStripMenuItem();
-            this.StatusBar = new System.Windows.Forms.StatusStrip();
+            this.MainStatusBar = new System.Windows.Forms.StatusStrip();
             this.StatusLabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.FileImageList16 = new System.Windows.Forms.ImageList(this.components);
             this.MainSplitContainer = new System.Windows.Forms.SplitContainer();
@@ -91,6 +97,12 @@
             this.MainSizeColumnHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.MainAttrColumnHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.MainPathColumnHeader = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.EditModeBaseWarningPanel = new System.Windows.Forms.Panel();
+            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.label1 = new System.Windows.Forms.Label();
+            this.EditModeModsWarningPanel = new System.Windows.Forms.Panel();
+            this.pictureBox2 = new System.Windows.Forms.PictureBox();
+            this.label2 = new System.Windows.Forms.Label();
             this.ListContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ListContextViewMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ListContextViewHexMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -116,6 +128,8 @@
             this.ListContextReplaceMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ListContextDeleteMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.ListContextEditSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.ListContextDefragmentMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.ListContextDefragmentSeparator = new System.Windows.Forms.ToolStripSeparator();
             this.ListContextSelectAllMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.TreeContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.TreeContextCopyPathMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -127,27 +141,20 @@
             this.SaveFileDialog = new System.Windows.Forms.SaveFileDialog();
             this.OpenFileDialog = new System.Windows.Forms.OpenFileDialog();
             this.FolderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            this.EditModeBaseWarningPanel = new System.Windows.Forms.Panel();
-            this.label1 = new System.Windows.Forms.Label();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
-            this.EditModeModsWarningPanel = new System.Windows.Forms.Panel();
-            this.pictureBox2 = new System.Windows.Forms.PictureBox();
-            this.label2 = new System.Windows.Forms.Label();
-            this.ListContextDefragmentMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.ListContextDefragmentSeparator = new System.Windows.Forms.ToolStripSeparator();
+            this.VSExtender = new WeifenLuo.WinFormsUI.Docking.VisualStudioToolStripExtender(this.components);
             this.MainMenu.SuspendLayout();
             this.MainToolbar.SuspendLayout();
-            this.StatusBar.SuspendLayout();
+            this.MainStatusBar.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.MainSplitContainer)).BeginInit();
             this.MainSplitContainer.Panel1.SuspendLayout();
             this.MainSplitContainer.Panel2.SuspendLayout();
             this.MainSplitContainer.SuspendLayout();
-            this.ListContextMenu.SuspendLayout();
-            this.TreeContextMenu.SuspendLayout();
             this.EditModeBaseWarningPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.EditModeModsWarningPanel.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).BeginInit();
+            this.ListContextMenu.SuspendLayout();
+            this.TreeContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
             // MainMenu
@@ -175,7 +182,7 @@
             // 
             this.FileExitMenu.Name = "FileExitMenu";
             this.FileExitMenu.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Alt | System.Windows.Forms.Keys.F4)));
-            this.FileExitMenu.Size = new System.Drawing.Size(152, 22);
+            this.FileExitMenu.Size = new System.Drawing.Size(134, 22);
             this.FileExitMenu.Text = "Exit";
             this.FileExitMenu.Click += new System.EventHandler(this.FileExitMenu_Click);
             // 
@@ -366,7 +373,9 @@
             this.ViewLargeIconsMenu,
             this.ViewSmallIconsMenu,
             this.ViewListMenu,
-            this.ViewDetailsMenu});
+            this.ViewDetailsMenu,
+            this.toolStripSeparator11,
+            this.ViewThemeMenu});
             this.ViewMenu.Name = "ViewMenu";
             this.ViewMenu.Size = new System.Drawing.Size(44, 20);
             this.ViewMenu.Text = "View";
@@ -374,21 +383,21 @@
             // ViewLargeIconsMenu
             // 
             this.ViewLargeIconsMenu.Name = "ViewLargeIconsMenu";
-            this.ViewLargeIconsMenu.Size = new System.Drawing.Size(134, 22);
+            this.ViewLargeIconsMenu.Size = new System.Drawing.Size(152, 22);
             this.ViewLargeIconsMenu.Text = "Large Icons";
             this.ViewLargeIconsMenu.Click += new System.EventHandler(this.ViewLargeIconsMenu_Click);
             // 
             // ViewSmallIconsMenu
             // 
             this.ViewSmallIconsMenu.Name = "ViewSmallIconsMenu";
-            this.ViewSmallIconsMenu.Size = new System.Drawing.Size(134, 22);
+            this.ViewSmallIconsMenu.Size = new System.Drawing.Size(152, 22);
             this.ViewSmallIconsMenu.Text = "Small Icons";
             this.ViewSmallIconsMenu.Click += new System.EventHandler(this.ViewSmallIconsMenu_Click);
             // 
             // ViewListMenu
             // 
             this.ViewListMenu.Name = "ViewListMenu";
-            this.ViewListMenu.Size = new System.Drawing.Size(134, 22);
+            this.ViewListMenu.Size = new System.Drawing.Size(152, 22);
             this.ViewListMenu.Text = "List";
             this.ViewListMenu.Click += new System.EventHandler(this.ViewListMenu_Click);
             // 
@@ -397,9 +406,55 @@
             this.ViewDetailsMenu.Checked = true;
             this.ViewDetailsMenu.CheckState = System.Windows.Forms.CheckState.Checked;
             this.ViewDetailsMenu.Name = "ViewDetailsMenu";
-            this.ViewDetailsMenu.Size = new System.Drawing.Size(134, 22);
+            this.ViewDetailsMenu.Size = new System.Drawing.Size(152, 22);
             this.ViewDetailsMenu.Text = "Details";
             this.ViewDetailsMenu.Click += new System.EventHandler(this.ViewDetailsMenu_Click);
+            // 
+            // toolStripSeparator11
+            // 
+            this.toolStripSeparator11.Name = "toolStripSeparator11";
+            this.toolStripSeparator11.Size = new System.Drawing.Size(149, 6);
+            // 
+            // ViewThemeMenu
+            // 
+            this.ViewThemeMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ViewThemeWindowsMenu,
+            this.ViewThemeBlueMenu,
+            this.ViewThemeLightMenu,
+            this.ViewThemeDarkMenu});
+            this.ViewThemeMenu.Name = "ViewThemeMenu";
+            this.ViewThemeMenu.Size = new System.Drawing.Size(152, 22);
+            this.ViewThemeMenu.Text = "Theme";
+            // 
+            // ViewThemeWindowsMenu
+            // 
+            this.ViewThemeWindowsMenu.Checked = true;
+            this.ViewThemeWindowsMenu.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.ViewThemeWindowsMenu.Name = "ViewThemeWindowsMenu";
+            this.ViewThemeWindowsMenu.Size = new System.Drawing.Size(152, 22);
+            this.ViewThemeWindowsMenu.Text = "Windows";
+            this.ViewThemeWindowsMenu.Click += new System.EventHandler(this.ViewThemeWindowsMenu_Click);
+            // 
+            // ViewThemeBlueMenu
+            // 
+            this.ViewThemeBlueMenu.Name = "ViewThemeBlueMenu";
+            this.ViewThemeBlueMenu.Size = new System.Drawing.Size(152, 22);
+            this.ViewThemeBlueMenu.Text = "Blue";
+            this.ViewThemeBlueMenu.Click += new System.EventHandler(this.ViewThemeBlueMenu_Click);
+            // 
+            // ViewThemeLightMenu
+            // 
+            this.ViewThemeLightMenu.Name = "ViewThemeLightMenu";
+            this.ViewThemeLightMenu.Size = new System.Drawing.Size(152, 22);
+            this.ViewThemeLightMenu.Text = "Light";
+            this.ViewThemeLightMenu.Click += new System.EventHandler(this.ViewThemeLightMenu_Click);
+            // 
+            // ViewThemeDarkMenu
+            // 
+            this.ViewThemeDarkMenu.Name = "ViewThemeDarkMenu";
+            this.ViewThemeDarkMenu.Size = new System.Drawing.Size(152, 22);
+            this.ViewThemeDarkMenu.Text = "Dark";
+            this.ViewThemeDarkMenu.Click += new System.EventHandler(this.ViewThemeDarkMenu_Click);
             // 
             // ToolsMenu
             // 
@@ -609,15 +664,15 @@
             this.SearchFilterButton.Text = "Filter";
             this.SearchFilterButton.Click += new System.EventHandler(this.SearchFilterButton_Click);
             // 
-            // StatusBar
+            // MainStatusBar
             // 
-            this.StatusBar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.MainStatusBar.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.StatusLabel});
-            this.StatusBar.Location = new System.Drawing.Point(0, 565);
-            this.StatusBar.Name = "StatusBar";
-            this.StatusBar.Size = new System.Drawing.Size(876, 22);
-            this.StatusBar.TabIndex = 2;
-            this.StatusBar.Text = "statusStrip1";
+            this.MainStatusBar.Location = new System.Drawing.Point(0, 565);
+            this.MainStatusBar.Name = "MainStatusBar";
+            this.MainStatusBar.Size = new System.Drawing.Size(876, 22);
+            this.MainStatusBar.TabIndex = 2;
+            this.MainStatusBar.Text = "MainStatusBar";
             // 
             // StatusLabel
             // 
@@ -699,6 +754,7 @@
             // 
             // MainListView
             // 
+            this.MainListView.AllowDrop = true;
             this.MainListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
@@ -723,7 +779,10 @@
             this.MainListView.AfterLabelEdit += new System.Windows.Forms.LabelEditEventHandler(this.MainListView_AfterLabelEdit);
             this.MainListView.ColumnClick += new System.Windows.Forms.ColumnClickEventHandler(this.MainListView_ColumnClick);
             this.MainListView.ItemActivate += new System.EventHandler(this.MainListView_ItemActivate);
+            this.MainListView.ItemDrag += new System.Windows.Forms.ItemDragEventHandler(this.MainListView_ItemDrag);
             this.MainListView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.MainListView_RetrieveVirtualItem);
+            this.MainListView.DragDrop += new System.Windows.Forms.DragEventHandler(this.MainListView_DragDrop);
+            this.MainListView.DragEnter += new System.Windows.Forms.DragEventHandler(this.MainListView_DragEnter);
             this.MainListView.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MainListView_KeyDown);
             this.MainListView.KeyUp += new System.Windows.Forms.KeyEventHandler(this.MainListView_KeyUp);
             this.MainListView.MouseUp += new System.Windows.Forms.MouseEventHandler(this.MainListView_MouseUp);
@@ -754,6 +813,72 @@
             this.MainPathColumnHeader.Text = "Path";
             this.MainPathColumnHeader.Width = 225;
             // 
+            // EditModeBaseWarningPanel
+            // 
+            this.EditModeBaseWarningPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.EditModeBaseWarningPanel.BackColor = System.Drawing.Color.DarkRed;
+            this.EditModeBaseWarningPanel.Controls.Add(this.pictureBox1);
+            this.EditModeBaseWarningPanel.Controls.Add(this.label1);
+            this.EditModeBaseWarningPanel.Location = new System.Drawing.Point(1, 3);
+            this.EditModeBaseWarningPanel.Name = "EditModeBaseWarningPanel";
+            this.EditModeBaseWarningPanel.Size = new System.Drawing.Size(559, 24);
+            this.EditModeBaseWarningPanel.TabIndex = 1;
+            // 
+            // pictureBox1
+            // 
+            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
+            this.pictureBox1.Location = new System.Drawing.Point(6, 3);
+            this.pictureBox1.Name = "pictureBox1";
+            this.pictureBox1.Size = new System.Drawing.Size(16, 16);
+            this.pictureBox1.TabIndex = 1;
+            this.pictureBox1.TabStop = false;
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.BackColor = System.Drawing.Color.Transparent;
+            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.ForeColor = System.Drawing.Color.White;
+            this.label1.Location = new System.Drawing.Point(25, 5);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(285, 13);
+            this.label1.TabIndex = 0;
+            this.label1.Text = "Warning: You are directly editing base game files";
+            // 
+            // EditModeModsWarningPanel
+            // 
+            this.EditModeModsWarningPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.EditModeModsWarningPanel.BackColor = System.Drawing.Color.DarkGreen;
+            this.EditModeModsWarningPanel.Controls.Add(this.pictureBox2);
+            this.EditModeModsWarningPanel.Controls.Add(this.label2);
+            this.EditModeModsWarningPanel.Location = new System.Drawing.Point(1, 28);
+            this.EditModeModsWarningPanel.Name = "EditModeModsWarningPanel";
+            this.EditModeModsWarningPanel.Size = new System.Drawing.Size(559, 24);
+            this.EditModeModsWarningPanel.TabIndex = 2;
+            // 
+            // pictureBox2
+            // 
+            this.pictureBox2.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox2.Image")));
+            this.pictureBox2.Location = new System.Drawing.Point(6, 3);
+            this.pictureBox2.Name = "pictureBox2";
+            this.pictureBox2.Size = new System.Drawing.Size(16, 16);
+            this.pictureBox2.TabIndex = 1;
+            this.pictureBox2.TabStop = false;
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.BackColor = System.Drawing.Color.Transparent;
+            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label2.ForeColor = System.Drawing.Color.White;
+            this.label2.Location = new System.Drawing.Point(25, 5);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(225, 13);
+            this.label2.TabIndex = 0;
+            this.label2.Text = "You are editing files in the mods folder";
+            // 
             // ListContextMenu
             // 
             this.ListContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -783,7 +908,7 @@
             this.ListContextDefragmentSeparator,
             this.ListContextSelectAllMenu});
             this.ListContextMenu.Name = "MainContextMenu";
-            this.ListContextMenu.Size = new System.Drawing.Size(208, 464);
+            this.ListContextMenu.Size = new System.Drawing.Size(208, 442);
             // 
             // ListContextViewMenu
             // 
@@ -967,6 +1092,18 @@
             this.ListContextEditSeparator.Name = "ListContextEditSeparator";
             this.ListContextEditSeparator.Size = new System.Drawing.Size(204, 6);
             // 
+            // ListContextDefragmentMenu
+            // 
+            this.ListContextDefragmentMenu.Name = "ListContextDefragmentMenu";
+            this.ListContextDefragmentMenu.Size = new System.Drawing.Size(207, 22);
+            this.ListContextDefragmentMenu.Text = "Defragment Archive...";
+            this.ListContextDefragmentMenu.Click += new System.EventHandler(this.ListContextDefragmentMenu_Click);
+            // 
+            // ListContextDefragmentSeparator
+            // 
+            this.ListContextDefragmentSeparator.Name = "ListContextDefragmentSeparator";
+            this.ListContextDefragmentSeparator.Size = new System.Drawing.Size(204, 6);
+            // 
             // ListContextSelectAllMenu
             // 
             this.ListContextSelectAllMenu.Name = "ListContextSelectAllMenu";
@@ -1033,83 +1170,9 @@
             // 
             this.OpenFileDialog.Multiselect = true;
             // 
-            // EditModeBaseWarningPanel
+            // VSExtender
             // 
-            this.EditModeBaseWarningPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.EditModeBaseWarningPanel.BackColor = System.Drawing.Color.DarkRed;
-            this.EditModeBaseWarningPanel.Controls.Add(this.pictureBox1);
-            this.EditModeBaseWarningPanel.Controls.Add(this.label1);
-            this.EditModeBaseWarningPanel.Location = new System.Drawing.Point(1, 3);
-            this.EditModeBaseWarningPanel.Name = "EditModeBaseWarningPanel";
-            this.EditModeBaseWarningPanel.Size = new System.Drawing.Size(559, 24);
-            this.EditModeBaseWarningPanel.TabIndex = 1;
-            // 
-            // label1
-            // 
-            this.label1.AutoSize = true;
-            this.label1.BackColor = System.Drawing.Color.Transparent;
-            this.label1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label1.ForeColor = System.Drawing.Color.White;
-            this.label1.Location = new System.Drawing.Point(25, 5);
-            this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(285, 13);
-            this.label1.TabIndex = 0;
-            this.label1.Text = "Warning: You are directly editing base game files";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox1.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox1.Image")));
-            this.pictureBox1.Location = new System.Drawing.Point(6, 3);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(16, 16);
-            this.pictureBox1.TabIndex = 1;
-            this.pictureBox1.TabStop = false;
-            // 
-            // EditModeModsWarningPanel
-            // 
-            this.EditModeModsWarningPanel.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.EditModeModsWarningPanel.BackColor = System.Drawing.Color.DarkGreen;
-            this.EditModeModsWarningPanel.Controls.Add(this.pictureBox2);
-            this.EditModeModsWarningPanel.Controls.Add(this.label2);
-            this.EditModeModsWarningPanel.Location = new System.Drawing.Point(1, 28);
-            this.EditModeModsWarningPanel.Name = "EditModeModsWarningPanel";
-            this.EditModeModsWarningPanel.Size = new System.Drawing.Size(559, 24);
-            this.EditModeModsWarningPanel.TabIndex = 2;
-            // 
-            // pictureBox2
-            // 
-            this.pictureBox2.Image = ((System.Drawing.Image)(resources.GetObject("pictureBox2.Image")));
-            this.pictureBox2.Location = new System.Drawing.Point(6, 3);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(16, 16);
-            this.pictureBox2.TabIndex = 1;
-            this.pictureBox2.TabStop = false;
-            // 
-            // label2
-            // 
-            this.label2.AutoSize = true;
-            this.label2.BackColor = System.Drawing.Color.Transparent;
-            this.label2.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.label2.ForeColor = System.Drawing.Color.White;
-            this.label2.Location = new System.Drawing.Point(25, 5);
-            this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(225, 13);
-            this.label2.TabIndex = 0;
-            this.label2.Text = "You are editing files in the mods folder";
-            // 
-            // ListContextDefragmentMenu
-            // 
-            this.ListContextDefragmentMenu.Name = "ListContextDefragmentMenu";
-            this.ListContextDefragmentMenu.Size = new System.Drawing.Size(207, 22);
-            this.ListContextDefragmentMenu.Text = "Defragment Archive...";
-            this.ListContextDefragmentMenu.Click += new System.EventHandler(this.ListContextDefragmentMenu_Click);
-            // 
-            // ListContextDefragmentSeparator
-            // 
-            this.ListContextDefragmentSeparator.Name = "ListContextDefragmentSeparator";
-            this.ListContextDefragmentSeparator.Size = new System.Drawing.Size(204, 6);
+            this.VSExtender.DefaultRenderer = null;
             // 
             // ExploreForm
             // 
@@ -1117,32 +1180,33 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(876, 587);
             this.Controls.Add(this.MainSplitContainer);
-            this.Controls.Add(this.StatusBar);
+            this.Controls.Add(this.MainStatusBar);
             this.Controls.Add(this.MainToolbar);
             this.Controls.Add(this.MainMenu);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.MainMenu;
             this.Name = "ExploreForm";
             this.Text = "RPF Explorer - CodeWalker by dexyfex";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.ExploreForm_FormClosed);
             this.Load += new System.EventHandler(this.ExploreForm_Load);
             this.MainMenu.ResumeLayout(false);
             this.MainMenu.PerformLayout();
             this.MainToolbar.ResumeLayout(false);
             this.MainToolbar.PerformLayout();
-            this.StatusBar.ResumeLayout(false);
-            this.StatusBar.PerformLayout();
+            this.MainStatusBar.ResumeLayout(false);
+            this.MainStatusBar.PerformLayout();
             this.MainSplitContainer.Panel1.ResumeLayout(false);
             this.MainSplitContainer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.MainSplitContainer)).EndInit();
             this.MainSplitContainer.ResumeLayout(false);
-            this.ListContextMenu.ResumeLayout(false);
-            this.TreeContextMenu.ResumeLayout(false);
             this.EditModeBaseWarningPanel.ResumeLayout(false);
             this.EditModeBaseWarningPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.EditModeModsWarningPanel.ResumeLayout(false);
             this.EditModeModsWarningPanel.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox2)).EndInit();
+            this.ListContextMenu.ResumeLayout(false);
+            this.TreeContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -1155,7 +1219,7 @@
         private System.Windows.Forms.ToolStripMenuItem EditMenu;
         private System.Windows.Forms.ToolStripMenuItem ViewMenu;
         private System.Windows.Forms.ToolStrip MainToolbar;
-        private System.Windows.Forms.StatusStrip StatusBar;
+        private System.Windows.Forms.StatusStrip MainStatusBar;
         private System.Windows.Forms.ToolStripStatusLabel StatusLabel;
         private System.Windows.Forms.ImageList FileImageList16;
         private System.Windows.Forms.ToolStripSplitButton BackButton;
@@ -1255,5 +1319,12 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.ToolStripMenuItem ListContextDefragmentMenu;
         private System.Windows.Forms.ToolStripSeparator ListContextDefragmentSeparator;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator11;
+        private System.Windows.Forms.ToolStripMenuItem ViewThemeMenu;
+        private System.Windows.Forms.ToolStripMenuItem ViewThemeBlueMenu;
+        private System.Windows.Forms.ToolStripMenuItem ViewThemeLightMenu;
+        private System.Windows.Forms.ToolStripMenuItem ViewThemeDarkMenu;
+        private WeifenLuo.WinFormsUI.Docking.VisualStudioToolStripExtender VSExtender;
+        private System.Windows.Forms.ToolStripMenuItem ViewThemeWindowsMenu;
     }
 }
